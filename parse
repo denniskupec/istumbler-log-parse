@@ -1,0 +1,47 @@
+#!/usr/bin/env php
+<?php
+
+ini_set("auto_detect_line_endings", true); // mac os problems
+
+if($argc < 1) {
+	exit("Usage: ./parse <log file> \n");
+}
+
+if(!file_exists($argv[1])) {
+	exit("Error: Invalid path provided. \n");
+}
+
+$file = fopen($argv[1], "r");
+$output = fopen(__DIR__ . "/output.json", "a");
+
+if(!$file) {
+   exit("Error: Failed to open log file. \n");
+}
+
+if(!$output) {
+	exit("Error: Could not create or write to output file. \n");
+}
+
+fwrite($output, "[\n");
+
+while(!feof($file)) {
+
+	$line = fgets($file);
+	$line = explode(",", $line); // fscanf wont work since each line is a different format
+
+	if(count($line) > 1 && $line[1] == "WiFiScan") {
+		$data = array_slice($line, 2);
+		$data[7] = trim($data[7]); 
+		
+		$json = json_encode($data);
+
+		fwrite($output, $json . ",\n");
+	}
+
+}
+
+fwrite($output, "\n]");
+fclose($file);
+fclose($output);
+
+// now remove the extra comma, then add square brackets at the beginning and end
